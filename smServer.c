@@ -17,7 +17,7 @@ int NUM_STR_;
 void *ImplementRequest(void *args)
 {
     int clientFileDescriptor=(int)args;
-    char msg[COM_BUFF_SIZE]
+    char msg[COM_BUFF_SIZE];
     char string_read[COM_BUFF_SIZE];
     ClientRequest *rqst;
 	  rqst = (ClientRequest*) malloc(sizeof(ClientRequest));
@@ -26,7 +26,7 @@ void *ImplementRequest(void *args)
     //printf(request)
     ParseMsg(msg, rqst);
 
-	if (rqst -> is_read = true)
+	if (rqst -> is_read == 0)
     {
       pthread_mutex_lock(&mutex);
       setContent(rqst -> msg, rqst -> pos, theArray);
@@ -38,8 +38,8 @@ void *ImplementRequest(void *args)
 
     }
   else{
-    pthread_mutex_lock(&mutex)
-    char string_read[COM_BUFF_SIZE];;
+    pthread_mutex_lock(&mutex);
+    char string_read[COM_BUFF_SIZE];
     getContent(string_read, rqst -> pos, theArray);
 
     write(clientFileDescriptor,string_read,COM_BUFF_SIZE);
