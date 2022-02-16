@@ -14,30 +14,41 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 char **theArray;
 int NUM_STR_;
 
-void *handleRequest(void *args)
+void *ImplementRequest(void *args)
 {
     int clientFileDescriptor=(int)args;
-    char msg[COM_BUFF_SIZE], string_read[COM_BUFF_SIZE];
+    char msg[COM_BUFF_SIZE]
+    char string_read[COM_BUFF_SIZE];
     ClientRequest *rqst;
-	rqst = (ClientRequest*) malloc(sizeof(ClientRequest));
+	  rqst = (ClientRequest*) malloc(sizeof(ClientRequest));
 
     read(clientFileDescriptor,msg,COM_BUFF_SIZE);
+    //printf(request)
     ParseMsg(msg, rqst);
 
-	if (!(rqst -> is_read))
+	if (rqst -> is_read = true)
     {
-
+      pthread_mutex_lock(&mutex);
       setContent(rqst -> msg, rqst -> pos, theArray);
+      char string_read[COM_BUFF_SIZE];
+      getContent(string_read, rqst -> pos, theArray);
+      write(clientFileDescriptor,string_read,COM_BUFF_SIZE);
+      pthread_mutex_unlock(&mutex);
+
 
     }
-
-
+  else{
+    pthread_mutex_lock(&mutex)
+    char string_read[COM_BUFF_SIZE];;
     getContent(string_read, rqst -> pos, theArray);
 
     write(clientFileDescriptor,string_read,COM_BUFF_SIZE);
+    pthread_mutex_unlock(&mutex);
+
+  }
+
 
     close(clientFileDescriptor);
-
     return NULL;
 }
 int main(int argc, char* argv[]){
