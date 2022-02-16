@@ -7,12 +7,15 @@
 #include<unistd.h>
 #include<pthread.h>
 #include "common.h"
+#include "timer.h"
 
 typedef struct {
     int clientFileDescriptor; 
+    int requestNumber;
     pthread_mutex_t *mutex_pointer;  
 } RequestParameters; 
 char** theArray;
+double access_times[COM_NUM_REQUEST];
 
 void *ProcessRequest(void* args) {
 	// retrieve struct passed to thread function
@@ -21,11 +24,14 @@ void *ProcessRequest(void* args) {
 	pthread_mutex_t *mutex_array_pointer = param_struct->mutex_pointer;
 
 	char incoming_msg[COM_BUFF_SIZE];
+	double start_time, end_time;
 	ClientRequest *rqst_struct = (ClientRequest*) malloc(sizeof(ClientRequest));
 
 	// retrive, display and parse incoming message 
 	read(clientFileDescriptor,incoming_msg,COM_BUFF_SIZE);
-	printf("reading client request:  %s\n",incoming_msg);
+	//printf("reading client request:  %s\n",incoming_msg);
+	
+	GET_TIME(start_time); // start timing here
 	ParseMsg(incoming_msg, rqst_struct);
 
 	if (rqst_struct->is_read == 0) { // write request
@@ -37,22 +43,25 @@ void *ProcessRequest(void* args) {
 		// retrieve and return updated value to client
 		char retrieved_string[COM_BUFF_SIZE]; 
 		getContent(retrieved_string, rqst_struct->pos, theArray); 
+		GET_TIME(end_time); // end timing here
 		write(clientFileDescriptor,retrieved_string,COM_BUFF_SIZE);
 		
 		pthread_mutex_unlock(&mutex_array_pointer[rqst_struct->pos]);
-		printf("Write request from client processed \n\n");	
+		//printf("Write request from client processed \n\n");	
 	} else { // read request
 		pthread_mutex_lock(&mutex_array_pointer[rqst_struct->pos]);
 
 		// read value from memory and return it to client
 		char retrieved_string[COM_BUFF_SIZE]; 
 		getContent(retrieved_string, rqst_struct->pos, theArray); 
+		GET_TIME(end_time); // end timing here
 		write(clientFileDescriptor,retrieved_string,COM_BUFF_SIZE); 
 
 		pthread_mutex_unlock(&mutex_array_pointer[rqst_struct->pos]);		
-		printf("Read request from client processed \n\n");
+		//printf("Read request from client processed \n\n");
 	}
 	
+	access_times[param_struct->requestNumber] = start_time - end_time;
 	close(clientFileDescriptor);
 	free(args);
 	return 0;
@@ -113,6 +122,7 @@ int main (int argc, char* argv[]) {
 				RequestParameters *param_struct = (RequestParameters*) malloc(sizeof(RequestParameters));
 				param_struct->clientFileDescriptor = clientFileDescriptor;
 				param_struct->mutex_pointer = &mutexes[0];
+				param_struct->requestNumber = thread;
 
 				pthread_create(&thread_handles[thread], NULL, ProcessRequest, (void*) param_struct);  
 			}
@@ -121,6 +131,8 @@ int main (int argc, char* argv[]) {
 			for (thread = 0; thread < COM_NUM_REQUEST; thread++) {
 			    	pthread_join(thread_handles[thread], NULL); 
 			}
+			
+			saveTimes(access_times, COM_NUM_REQUEST);
         	}
         	
         	close(serverFileDescriptor);
