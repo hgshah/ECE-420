@@ -12,16 +12,24 @@
 pthread_rwlock_t rwl;
 char **theArray;
 double times[COM_NUM_REQUEST];
+typedef struct {
+    int clientFileDescriptor; 
+    int requestNumber;
+} RequestParameters; 
 
 void *handleRequest(void *args)
 {	
-    int clientFileDescriptor=(int)args;
+    RequestParameters *param_struct = (RequestParameters*) args;
+	int clientFileDescriptor = param_struct->clientFileDescriptor;
     char msg[COM_BUFF_SIZE], string_read[COM_BUFF_SIZE];
+	double start_time, end_time;
     ClientRequest *rqst;
 	rqst = (ClientRequest*) malloc(sizeof(ClientRequest));
 
     read(clientFileDescriptor,msg,COM_BUFF_SIZE);
-    ParseMsg(msg, rqst);
+	GET_TIME(start_time);
+    
+	ParseMsg(msg, rqst);
    
 	if (!(rqst -> is_read))
     {
@@ -33,9 +41,13 @@ void *handleRequest(void *args)
     pthread_rwlock_rdlock(&rwl);
     getContent(string_read, rqst -> pos, theArray);
     pthread_rwlock_unlock(&rwl);
+	
+	GET_TIME(end_time);
     write(clientFileDescriptor,string_read,COM_BUFF_SIZE);
     
     close(clientFileDescriptor);
+	
+	times[param_struct->requestNumber] = start_time - end_time;
 	
     return NULL;
 }
@@ -85,20 +97,18 @@ int main(int argc, char* argv[])
         listen(serverFileDescriptor,2000); 
         while(1)        //loop infinity
         {
-			double startTime[COM_NUM_REQUEST], endTime[COM_NUM_REQUEST];
-	
             for(i=0;i<COM_NUM_REQUEST;i++)
 			{	
-				GET_TIME(startTime[i]);
                 clientFileDescriptor=accept(serverFileDescriptor,NULL,NULL);
-                //printf("Connected to client %d\n",clientFileDescriptor);
-                pthread_create(&t[i],NULL,handleRequest,(void *)(long)clientFileDescriptor);
+                RequestParameters *param_struct = (RequestParameters*) malloc(sizeof(RequestParameters));
+				param_struct->clientFileDescriptor = clientFileDescriptor;
+				param_struct->requestNumber = i;
+
+                pthread_create(&t[i],NULL,handleRequest,(void *)param_struct);
             }
 			for (i=0;i<COM_NUM_REQUEST;i++)
 			{
 				pthread_join(t[i], NULL);
-				GET_TIME(endTime[i]);
-				times[i] = startTime[i] - endTime[i];
 			}
 			saveTimes(times, COM_NUM_REQUEST);
         }
