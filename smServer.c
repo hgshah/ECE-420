@@ -92,7 +92,7 @@ int main(int argc, char* argv[]){
     //             clientFileDescriptor=accept(serverFileDescriptor,NULL,NULL);
     //             //printf("Connected to client %d\n",clientFileDescriptor);
             pthread_create(&thread_handles[thread], NULL,
-                handleRequest, (void*) thread);
+                ImplementRequest, (void*) thread);
 
     /* Finalize threads */
     for (thread = 0; thread < COM_NUM_REQUEST; thread++)
