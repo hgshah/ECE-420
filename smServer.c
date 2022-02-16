@@ -85,26 +85,42 @@ int main(int argc, char* argv[]){
     sock_var.sin_addr.s_addr=inet_addr(server_ip);
     sock_var.sin_port=server_port;
     sock_var.sin_family=AF_INET;
-
-    /* Create threads */
-    for (thread = 0; thread < COM_NUM_REQUEST; thread++)
-                //GET_TIME(startTime[i]);
-    //             clientFileDescriptor=accept(serverFileDescriptor,NULL,NULL);
-    //             //printf("Connected to client %d\n",clientFileDescriptor);
+    int serverFileDescriptor=socket(AF_INET,SOCK_STREAM,0);
+    int clientFileDescriptor;
+    if(bind(serverFileDescriptor,(struct sockaddr*)&sock_var,sizeof(sock_var))>=0)
+    {
+        printf("socket has been created\n");
+        listen(serverFileDescriptor,2000);
+        while(1)        //loop infinity
+        {
+          for (thread = 0; thread < COM_NUM_REQUEST; thread++){
+            //GET_TIME(startTime[i]);
+            clientFileDescriptor=accept(serverFileDescriptor,NULL,NULL);
+            printf("Connected to client %d\n",clientFileDescriptor);
             pthread_create(&thread_handles[thread], NULL,
-                ImplementRequest, (void*) thread);
+            ImplementRequest, (void*) thread);
+          }
 
-    /* Finalize threads */
-    for (thread = 0; thread < COM_NUM_REQUEST; thread++)
+          for (thread = 0; thread < COM_NUM_REQUEST; thread++){
             pthread_join(thread_handles[thread], NULL);
             //GET_TIME(endTime[i]);
             //     times[i] = startTime[i] - endTime[i];
 
-    //  saveTimes(times, COM_NUM_REQUEST);
+            //  saveTimes(times, COM_NUM_REQUEST);
             //     }
             //     close(serverFileDescriptor);
             // }
-    pthread_mutex_destroy(&mutex);        
+          }
+
+        }
+        /* Finalize threads */
+
+
+        close(serverFileDescriptor);
+    }else{
+        printf("socket creation failed\n");
+    }
+    pthread_mutex_destroy(&mutex);
     free(thread_handles);
     return 0;
 
