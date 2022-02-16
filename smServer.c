@@ -10,7 +10,7 @@
 #include "timer.h"
 
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // avoides init and destroy
 char **theArray;
 int NUM_STR_;
 
@@ -64,16 +64,16 @@ int main(int argc, char* argv[]){
     NUM_STR_ = strtol(argv[1], NULL, 10);
     char *server_ip = argv[2];
     int server_port = strtol(argv[3], NULL, 10);
-    pthread_mutex_lock(&mutex);
-    theArray = (char**) malloc(sizeof(char*) *NUM_STR_);
 
+    theArray = (char**) malloc(sizeof(char*) *NUM_STR_);
+    pthread_mutex_init(&mutex, NULL);
     for(int i = 0; i <NUM_STR_; i++)
     {
 
         theArray[i] = (char*) malloc(sizeof(char) * COM_BUFF_SIZE);
 
     }
-    pthread_mutex_unlock(&mutex);
+
     for(int i = 0; i < NUM_STR_; i++)
     {
         sprintf(theArray[i], "String %d: the initial value", i);
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]){
             //     }
             //     close(serverFileDescriptor);
             // }
-
+    pthread_mutex_destroy(&mutex);        
     free(thread_handles);
     return 0;
 
