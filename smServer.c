@@ -40,23 +40,19 @@ void *ImplementRequest(void *args)
     {
       pthread_mutex_lock(&mutex);
       setContent(rqst -> msg, rqst -> pos, theArray);
-      char string_read[COM_BUFF_SIZE];
-      getContent(string_read, rqst -> pos, theArray);
-      write(clientFileDescriptor,string_read,COM_BUFF_SIZE);
       pthread_mutex_unlock(&mutex);
 
 
     }
-  else{
+
     pthread_mutex_lock(&mutex);
-    char string_read[COM_BUFF_SIZE];
     getContent(string_read, rqst -> pos, theArray);
     pthread_mutex_unlock(&mutex);
     GET_TIME(end_time);
     write(clientFileDescriptor,string_read,COM_BUFF_SIZE);
 
 
-  }
+
 
 
     close(clientFileDescriptor);
@@ -110,7 +106,7 @@ int main(int argc, char* argv[]){
           for (thread = 0; thread < COM_NUM_REQUEST; thread++){
 
             clientFileDescriptor=accept(serverFileDescriptor,NULL,NULL);
-            printf("Connected to client %d\n",clientFileDescriptor);
+          //  printf("Connected to client %d\n",clientFileDescriptor);
 
             pthread_create(&thread_handles[thread], NULL,
             ImplementRequest, (void *)(long)clientFileDescriptor);
