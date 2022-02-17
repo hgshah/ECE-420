@@ -10,7 +10,8 @@
 #include "timer.h"
 
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // avoides init and destroy
+pthread_mutex_t mutex;
+double times[COM_NUM_REQUEST];
 char **theArray;
 int NUM_STR_;
 double times[COM_NUM_REQUEST];
@@ -50,15 +51,16 @@ void *ImplementRequest(void *args)
     pthread_mutex_lock(&mutex);
     char string_read[COM_BUFF_SIZE];
     getContent(string_read, rqst -> pos, theArray);
+    pthread_mutex_unlock(&mutex);
     GET_TIME(end_time);
     write(clientFileDescriptor,string_read,COM_BUFF_SIZE);
-    pthread_mutex_unlock(&mutex);
+
 
   }
 
 
     close(clientFileDescriptor);
-    
+    times[clientFileDescriptor] = start_time - end_time;
     return NULL;
 }
 int main(int argc, char* argv[]){
@@ -97,8 +99,8 @@ int main(int argc, char* argv[]){
     sock_var.sin_port=server_port;
     sock_var.sin_family=AF_INET;
     int serverFileDescriptor=socket(AF_INET,SOCK_STREAM,0);
-    int clientFileDescriptor;
-    int i;
+     int clientFileDescriptor;
+     int i;
     if(bind(serverFileDescriptor,(struct sockaddr*)&sock_var,sizeof(sock_var))>=0)
     {
         printf("socket has been created\n");
@@ -106,26 +108,19 @@ int main(int argc, char* argv[]){
         while(1)        //loop infinity
         {
           for (thread = 0; thread < COM_NUM_REQUEST; thread++){
-            //GET_TIME(startTime[i]);
+
             clientFileDescriptor=accept(serverFileDescriptor,NULL,NULL);
             printf("Connected to client %d\n",clientFileDescriptor);
-            RequestParameters *param_struct = (RequestParameters*) malloc(sizeof(RequestParameters));
-            // // clientFileDescriptor = clientFileDescriptor;
-            // requestNumber = thread;
+
             pthread_create(&thread_handles[thread], NULL,
             ImplementRequest, (void *)(long)clientFileDescriptor);
           }
 
           for (thread = 0; thread < COM_NUM_REQUEST; thread++){
             pthread_join(thread_handles[thread], NULL);
-            //GET_TIME(endTime[i]);
-            //     times[i] = startTime[i] - endTime[i];
 
-            //  saveTimes(times, COM_NUM_REQUEST);
-            //     }
-            //     close(serverFileDescriptor);
-            // }
           }
+          saveTimes(times, COM_NUM_REQUEST);
 
         }
         /* Finalize threads */
@@ -135,7 +130,7 @@ int main(int argc, char* argv[]){
     }else{
         printf("socket creation failed\n");
     }
-    pthread_mutex_destroy(&mutex);
+
     free(thread_handles);
     return 0;
 
